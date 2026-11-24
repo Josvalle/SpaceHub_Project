@@ -1,0 +1,25 @@
+meta {
+  name: Deactivate space as admin
+  type: http
+  seq: 2
+}
+
+delete {
+  url: {{baseUrl}}/api/spaces/{{spaceId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("space is inactive", function() {
+    expect(res.body.isActive).to.equal(false);
+  });
+}

@@ -1,0 +1,17 @@
+meta {
+  name: Get space not found
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/api/spaces/999999
+  body: none
+  auth: none
+}
+
+tests {
+  test("status is 404", function() {
+    expect(res.status).to.equal(404);
+  });
+}

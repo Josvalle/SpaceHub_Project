@@ -1,0 +1,21 @@
+meta {
+  name: Get reservation as admin
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/api/reservations/{{bookingId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+}

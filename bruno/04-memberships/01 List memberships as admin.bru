@@ -1,0 +1,25 @@
+meta {
+  name: List memberships as admin
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/memberships
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("returns an array", function() {
+    expect(res.body).to.be.an("array");
+  });
+}

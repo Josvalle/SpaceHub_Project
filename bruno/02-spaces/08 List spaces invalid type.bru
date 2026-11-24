@@ -1,0 +1,17 @@
+meta {
+  name: List spaces invalid type
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/api/spaces?type=garage
+  body: none
+  auth: none
+}
+
+tests {
+  test("status is 400", function() {
+    expect(res.status).to.equal(400);
+  });
+}

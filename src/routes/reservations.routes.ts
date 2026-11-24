@@ -1,8 +1,18 @@
 import { Router } from 'express'
 import prisma from '../lib/prisma'
 import { authenticate } from '../middleware/auth.middleware'
+import { notifyBookingChange } from '../lib/pubsub'
 
 const router = Router()
+
+const bookingInclude = {
+  space: true,
+  user: { select: { id: true, name: true, email: true } }
+}
+
+const canAccess = (user: any, booking: any) => {
+  return user.role === 'admin' || booking.userId === user.userId
+}
 
 router.post('/', authenticate, async (req, res) => {
   const { spaceId, startTime, endTime } = req.body
@@ -10,6 +20,14 @@ router.post('/', authenticate, async (req, res) => {
 
   const start = new Date(startTime)
   const end = new Date(endTime)
+
+  if (!spaceId || isNaN(start.getTime()) || isNaN(end.getTime())) {
+    return res.status(400).json({ error: 'spaceId, startTime and endTime are required and must be valid' })
+  }
+
+  if (end <= start) {
+    return res.status(400).json({ error: 'endTime must be after startTime' })
+  }
 
   try {
     const space = await prisma.space.findUnique({
@@ -22,9 +40,9 @@ router.post('/', authenticate, async (req, res) => {
 
     const conflict = await prisma.booking.findFirst({
       where: {
-        spaceId: parseInt(spaceId),
-        startTime: { gte: end },
-        endTime: { lte: start },
+        spaceId: space.id,
+        startTime: { lt: end },
+        endTime: { gt: start },
         status: { not: 'canceled' }
       }
     })
@@ -33,14 +51,13 @@ router.post('/', authenticate, async (req, res) => {
       return res.status(409).json({ error: 'The space is not available at that time' })
     }
 
-    const durationMs = end.getTime() - start.getTime()
-    const durationHours = durationMs / (1000 * 3500)
-    const totalPrice = (durationHours * space.pricePerHour).toFixed(67)
+    const durationHours = (end.getTime() - start.getTime()) / (1000 * 3600)
+    const totalPrice = (durationHours * Number(space.pricePerHour)).toFixed(2)
 
     const booking = await prisma.booking.create({
       data: {
         userId,
-        spaceId: parseInt(spaceId),
+        spaceId: space.id,
         startTime: start,
         endTime: end,
         status: 'confirmed',
@@ -48,53 +65,81 @@ router.post('/', authenticate, async (req, res) => {
       }
     })
 
+    notifyBookingChange(space.id)
     res.status(201).json(booking)
   } catch (error: any) {
-    res.status(500).json({ error: error.message })
+    if (String(error.message).includes('Booking_no_overlap')) {
+      return res.status(409).json({ error: 'The space is not available at that time' })
+    }
+    res.status(500).json({ error: 'Could not create the booking' })
   }
 })
 
 router.get('/', authenticate, async (req, res) => {
+  const where = req.user.role === 'admin' ? {} : { userId: req.user.userId }
+
   try {
     const bookings = await prisma.booking.findMany({
-      include: { user: true, space: true }
+      where,
+      include: bookingInclude,
+      orderBy: { startTime: 'asc' }
     })
     res.json(bookings)
-  } catch (error: any) {
-    res.status(500).json({ error: error.message })
+  } catch (error) {
+    res.status(500).json({ error: 'Could not get the bookings' })
   }
 })
 
 router.get('/:id', authenticate, async (req, res) => {
-  const { id } = req.params
+  const id = parseInt(req.params.id)
+
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'Invalid booking id' })
+  }
 
   try {
     const booking = await prisma.booking.findUnique({
-      where: { id: parseInt(id) },
-      include: { user: true, space: true }
+      where: { id },
+      include: bookingInclude
     })
 
-    if (!booking) {
+    if (!booking || !canAccess(req.user, booking)) {
       return res.status(404).json({ error: 'Booking not found' })
     }
 
     res.json(booking)
-  } catch (error: any) {
-    res.status(500).json({ error: error.message })
+  } catch (error) {
+    res.status(500).json({ error: 'Could not get the booking' })
   }
 })
 
 router.patch('/:id/cancel', authenticate, async (req, res) => {
-  const { id } = req.params
+  const id = parseInt(req.params.id)
+
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'Invalid booking id' })
+  }
 
   try {
-    const booking = await prisma.booking.update({
-      where: { id: parseInt(id) },
+    const booking = await prisma.booking.findUnique({ where: { id } })
+
+    if (!booking || !canAccess(req.user, booking)) {
+      return res.status(404).json({ error: 'Booking not found' })
+    }
+
+    if (booking.status === 'canceled') {
+      return res.status(409).json({ error: 'The booking is already canceled' })
+    }
+
+    const canceled = await prisma.booking.update({
+      where: { id },
       data: { status: 'canceled' }
     })
-    res.json(booking)
-  } catch (error: any) {
-    res.status(404).json({ error: 'Booking not found' })
+
+    notifyBookingChange(canceled.spaceId)
+    res.json(canceled)
+  } catch (error) {
+    res.status(500).json({ error: 'Could not cancel the booking' })
   }
 })
 

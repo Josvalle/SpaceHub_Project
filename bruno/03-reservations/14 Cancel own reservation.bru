@@ -1,0 +1,25 @@
+meta {
+  name: Cancel own reservation
+  type: http
+  seq: 14
+}
+
+patch {
+  url: {{baseUrl}}/api/reservations/{{bookingId}}/cancel
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{memberToken}}
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("status is canceled", function() {
+    expect(res.body.status).to.equal("canceled");
+  });
+}

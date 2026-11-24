@@ -1,0 +1,25 @@
+meta {
+  name: Get own reservation
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/api/reservations/{{bookingId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{memberToken}}
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("user email is hidden from password", function() {
+    expect(res.body.user.password).to.equal(undefined);
+  });
+}

@@ -1,0 +1,27 @@
+meta {
+  name: Update space as member
+  type: http
+  seq: 12
+}
+
+put {
+  url: {{baseUrl}}/api/spaces/{{spaceId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{memberToken}}
+}
+
+body:json {
+  {
+    "capacity": 10
+  }
+}
+
+tests {
+  test("status is 403", function() {
+    expect(res.status).to.equal(403);
+  });
+}

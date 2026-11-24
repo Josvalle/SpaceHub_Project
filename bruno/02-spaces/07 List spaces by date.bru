@@ -1,0 +1,17 @@
+meta {
+  name: List spaces by date
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/spaces?date=2000-01-01
+  body: none
+  auth: none
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+}

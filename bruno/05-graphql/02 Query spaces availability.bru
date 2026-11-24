@@ -1,0 +1,27 @@
+meta {
+  name: Query spaces availability
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/graphql
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "query": "{ spacesAvailability(start: \"{{startTime}}\", end: \"{{endTime}}\") { available space { id } } }"
+  }
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("the reserved space is not available", function() {
+    var item = res.body.data.spacesAvailability.find(function(s) { return Number(s.space.id) === bru.getVar("spaceId"); }); expect(item.available).to.equal(false);
+  });
+}

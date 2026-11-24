@@ -1,0 +1,39 @@
+meta {
+  name: Create space as admin
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/spaces
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "name": "Bruno Room",
+    "type": "private_room",
+    "capacity": 4,
+    "pricePerHour": 20,
+    "location": "San Jose"
+  }
+}
+
+vars:post-response {
+  spaceId: res.body.id
+}
+
+tests {
+  test("status is 201", function() {
+    expect(res.status).to.equal(201);
+  });
+
+  test("space is active", function() {
+    expect(res.body.isActive).to.equal(true);
+  });
+}

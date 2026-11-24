@@ -1,0 +1,25 @@
+meta {
+  name: List reservations as admin
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/reservations
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("admin sees the reservation of member 1", function() {
+    expect(res.body.some(function(b) { return b.id === bru.getVar("bookingId"); })).to.equal(true);
+  });
+}

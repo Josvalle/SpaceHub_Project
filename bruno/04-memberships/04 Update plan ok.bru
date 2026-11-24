@@ -1,0 +1,31 @@
+meta {
+  name: Update plan ok
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/api/memberships/{{memberId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "plan": "pro"
+  }
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("plan is pro", function() {
+    expect(res.body.plan).to.equal("pro");
+  });
+}

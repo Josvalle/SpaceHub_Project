@@ -1,0 +1,21 @@
+meta {
+  name: Cancel reservation of another member
+  type: http
+  seq: 13
+}
+
+patch {
+  url: {{baseUrl}}/api/reservations/{{bookingId}}/cancel
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{member2Token}}
+}
+
+tests {
+  test("status is 404", function() {
+    expect(res.status).to.equal(404);
+  });
+}

@@ -1,0 +1,21 @@
+meta {
+  name: Cancel reservation twice
+  type: http
+  seq: 15
+}
+
+patch {
+  url: {{baseUrl}}/api/reservations/{{bookingId}}/cancel
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{memberToken}}
+}
+
+tests {
+  test("status is 409", function() {
+    expect(res.status).to.equal(409);
+  });
+}

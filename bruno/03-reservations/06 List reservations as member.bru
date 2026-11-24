@@ -1,0 +1,25 @@
+meta {
+  name: List reservations as member
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/reservations
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{member2Token}}
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("member 2 sees none of the reservations of member 1", function() {
+    res.body.forEach(function(b) { expect(b.userId).to.equal(bru.getVar("member2Id")); });
+  });
+}

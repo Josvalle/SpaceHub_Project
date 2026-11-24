@@ -1,0 +1,39 @@
+meta {
+  name: Register admin if missing
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/auth/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Admin",
+    "email": "{{adminEmail}}",
+    "password": "{{adminPassword}}"
+  }
+}
+
+script:pre-request {
+  const day = Math.floor(Math.random() * 3000);
+  const start = new Date(Date.UTC(2100, 0, 1) + day * 86400000 + 10 * 3600000);
+  const hour = 3600000;
+  const stamp = Date.now() + "" + Math.floor(Math.random() * 1000);
+  bru.setVar("memberEmail", "member" + stamp + "@test.com");
+  bru.setVar("member2Email", "member2" + stamp + "@test.com");
+  bru.setVar("newEmail", "new" + stamp + "@test.com");
+  bru.setVar("startTime", start.toISOString());
+  bru.setVar("endTime", new Date(start.getTime() + 2 * hour).toISOString());
+  bru.setVar("overlapStart", new Date(start.getTime() + hour).toISOString());
+  bru.setVar("overlapEnd", new Date(start.getTime() + 3 * hour).toISOString());
+}
+
+tests {
+  test("status is 201 or 409", function() {
+    expect([201, 409]).to.include(res.status);
+  });
+}

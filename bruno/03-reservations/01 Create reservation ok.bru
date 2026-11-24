@@ -1,0 +1,37 @@
+meta {
+  name: Create reservation ok
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/reservations
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{memberToken}}
+}
+
+body:json {
+  {
+    "spaceId": {{spaceId}},
+    "startTime": "{{startTime}}",
+    "endTime": "{{endTime}}"
+  }
+}
+
+vars:post-response {
+  bookingId: res.body.id
+}
+
+tests {
+  test("status is 201", function() {
+    expect(res.status).to.equal(201);
+  });
+
+  test("two hours at 20 cost 40", function() {
+    expect(Number(res.body.totalPrice)).to.equal(40);
+  });
+}
