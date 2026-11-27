@@ -26,7 +26,7 @@ tests {
     expect(res.status).to.equal(200);
   });
 
-  test("admin user has role admin (promote it with SQL, see README)", function() {
+  test("admin user has role admin (run npm run seed, see README)", function() {
     expect(res.body.user.role).to.equal("admin");
   });
 }

@@ -1,0 +1,17 @@
+meta {
+  name: List spaces time without date
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/api/spaces?startTime=10:00&endTime=12:00
+  body: none
+  auth: none
+}
+
+tests {
+  test("status is 400", function() {
+    expect(res.status).to.equal(400);
+  });
+}

@@ -49,11 +49,16 @@ type Analytics {
   topUsers: [TopUser!]!
 }
 
+enum GroupBy {
+  day
+  month
+}
+
 type Query {
   spaces(type: String, minCapacity: Int): [Space!]!
   space(id: ID!): Space
   spacesAvailability(start: String!, end: String!, type: String, minCapacity: Int): [SpaceAvailability!]!
-  analytics(from: String!, to: String!, groupBy: String = "month", expiresInDays: Int = 7, topLimit: Int = 5): Analytics!
+  analytics(from: String!, to: String!, groupBy: GroupBy = month, expiresInDays: Int = 7, topLimit: Int = 5): Analytics!
 }
 
 type Subscription {

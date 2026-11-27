@@ -3,15 +3,17 @@ import express from 'express'
 import cors from 'cors'
 import fs from 'fs'
 import path from 'path'
-import jwt from 'jsonwebtoken'
 import { createYoga, createSchema } from 'graphql-yoga'
+import swaggerUi from 'swagger-ui-express'
 import authRoutes from './routes/auth.routes'
 import spacesRoutes from './routes/spaces.routes'
 import reservationsRoutes from './routes/reservations.routes'
 import membershipsRoutes from './routes/memberships.routes'
-import swaggerUi from 'swagger-ui-express'
 import { resolvers } from './graphql/resolvers'
+import { getUserFromToken } from './middleware/auth.middleware'
+import { errorHandler, notFoundHandler } from './middleware/error.middleware'
 import openapi from './docs/openapi.json'
+import { GraphQLContext } from './types'
 
 if (!process.env.JWT_SECRET) {
   console.error('JWT_SECRET is not defined in the environment')
@@ -20,18 +22,12 @@ if (!process.env.JWT_SECRET) {
 
 const typeDefs = fs.readFileSync(path.join(process.cwd(), 'src', 'graphql', 'schema.graphql'), 'utf8')
 
-const yoga = createYoga({
-  schema: createSchema({ typeDefs, resolvers }),
+const yoga = createYoga<{}, GraphQLContext>({
+  schema: createSchema<GraphQLContext>({ typeDefs, resolvers }),
   graphqlEndpoint: '/api/graphql',
   context: ({ request }) => {
     const token = (request.headers.get('authorization') || '').replace('Bearer ', '')
-    let user = null
-    try {
-      user = token ? jwt.verify(token, process.env.JWT_SECRET as string) : null
-    } catch (error) {
-      user = null
-    }
-    return { user }
+    return { user: token ? getUserFromToken(token) : null }
   }
 })
 
@@ -54,16 +50,8 @@ app.use('/api/spaces', spacesRoutes)
 app.use('/api/reservations', reservationsRoutes)
 app.use('/api/memberships', membershipsRoutes)
 
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' })
-})
-
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if (err.type === 'entity.parse.failed') {
-    return res.status(400).json({ error: 'Invalid JSON body' })
-  }
-  res.status(500).json({ error: 'Internal server error' })
-})
+app.use(notFoundHandler)
+app.use(errorHandler)
 
 app.listen(PORT, () => {
   console.log(`SpaceHub API running on port ${PORT}`)

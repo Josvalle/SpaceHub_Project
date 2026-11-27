@@ -1,9 +1,9 @@
 import { createPubSub } from 'graphql-yoga'
 
-const pubsub = createPubSub<{ bookings: [number] }>()
+const pubsub = createPubSub<{ availability: [] }>()
 
-export const notifyBookingChange = (spaceId: number) => {
-  pubsub.publish('bookings', spaceId)
+export const notifyAvailabilityChange = () => {
+  pubsub.publish('availability')
 }
 
-export const onBookingChange = () => pubsub.subscribe('bookings')
+export const onAvailabilityChange = () => pubsub.subscribe('availability')

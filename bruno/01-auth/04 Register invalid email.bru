@@ -1,5 +1,5 @@
 meta {
-  name: Register short password
+  name: Register invalid email
   type: http
   seq: 4
 }
@@ -12,9 +12,9 @@ post {
 
 body:json {
   {
-    "name": "Short",
-    "email": "short@test.com",
-    "password": "123"
+    "name": "Bad Email",
+    "email": "not-an-email",
+    "password": "12345678"
   }
 }
 

@@ -52,7 +52,9 @@
         "parameters": [
           { "name": "type", "in": "query", "schema": { "$ref": "#/components/schemas/SpaceType" } },
           { "name": "minCapacity", "in": "query", "schema": { "type": "integer", "minimum": 1 } },
-          { "name": "date", "in": "query", "description": "Solo espacios sin reservas ese dia (YYYY-MM-DD)", "schema": { "type": "string", "format": "date" } }
+          { "name": "date", "in": "query", "description": "Dia a consultar (YYYY-MM-DD). Sin horas, solo se ocultan los espacios ocupados todo el dia", "schema": { "type": "string", "format": "date" } },
+          { "name": "startTime", "in": "query", "description": "Hora de inicio HH:mm (UTC). Requiere date y endTime. Solo se muestran los espacios libres en ese rango", "schema": { "type": "string", "example": "10:00" } },
+          { "name": "endTime", "in": "query", "description": "Hora de fin HH:mm (UTC). Requiere date y startTime", "schema": { "type": "string", "example": "12:00" } }
         ],
         "responses": {
           "200": { "description": "Lista de espacios", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Space" } } } } },
@@ -86,7 +88,7 @@
           "404": { "$ref": "#/components/responses/NotFound" }
         }
       },
-      "put": {
+      "patch": {
         "tags": ["Spaces"],
         "summary": "Actualizar un espacio (admin)",
         "description": "Todos los campos son opcionales.",

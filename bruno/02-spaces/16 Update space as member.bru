@@ -1,10 +1,10 @@
 meta {
   name: Update space as member
   type: http
-  seq: 12
+  seq: 16
 }
 
-put {
+patch {
   url: {{baseUrl}}/api/spaces/{{spaceId}}
   body: json
   auth: bearer

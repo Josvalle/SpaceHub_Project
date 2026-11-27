@@ -15,11 +15,18 @@ npm install
 - `DATABASE_URL`: la conexión a tu base de datos PostgreSQL
 - `JWT_SECRET`: una clave secreta, entre más larga mejor
 - `PORT`: el puerto del servidor (3000)
+- `ADMIN_NAME`, `ADMIN_EMAIL` y `ADMIN_PASSWORD`: los datos del administrador (se usan en el paso 4)
 
 3. Crear las tablas en la base de datos:
 
 ```bash
 npx prisma migrate dev
+```
+
+4. Crear el administrador:
+
+```bash
+npm run seed
 ```
 
 ## Cómo correrlo
@@ -35,7 +42,9 @@ Con el servidor corriendo se puede entrar a:
 
 ## Crear un administrador
 
-Todos los usuarios que se registran son miembros. Para volver administrador a alguien hay que hacerlo directo en la base de datos:
+Todos los usuarios que se registran son miembros. El administrador se crea con `npm run seed`, que usa los datos de `ADMIN_EMAIL` y `ADMIN_PASSWORD` del archivo `.env`. Solo se ejecuta a mano, el servidor nunca lo hace solo. Si el correo ya existe, ese usuario pasa a ser administrador.
+
+También se puede hacer directo en la base de datos:
 
 ```sql
 UPDATE "User" SET role = 'admin' WHERE email = 'correo@ejemplo.com';
@@ -65,4 +74,4 @@ Las pruebas están hechas con Bruno y están en la carpeta `bruno/`. Con el serv
 npm run test:api
 ```
 
-Las pruebas usan un administrador que está definido en `bruno/environments/local.bru`. Hay que registrarlo y volverlo administrador con el SQL de arriba antes de correr las pruebas.
+Las pruebas usan el administrador de `bruno/environments/local.bru`. Tiene que ser el mismo que está en `ADMIN_EMAIL` y `ADMIN_PASSWORD` del `.env`, y haber corrido `npm run seed` antes.

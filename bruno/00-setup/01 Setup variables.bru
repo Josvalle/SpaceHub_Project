@@ -1,20 +1,19 @@
 meta {
-  name: Register admin if missing
+  name: Setup variables
   type: http
   seq: 1
 }
 
 post {
-  url: {{baseUrl}}/api/auth/register
+  url: {{baseUrl}}/api/auth/login
   body: json
   auth: none
 }
 
 body:json {
   {
-    "name": "Admin",
-    "email": "{{adminEmail}}",
-    "password": "{{adminPassword}}"
+    "email": "nobody@test.com",
+    "password": "wrongpassword"
   }
 }
 
@@ -33,7 +32,7 @@ script:pre-request {
 }
 
 tests {
-  test("status is 201 or 409", function() {
-    expect([201, 409]).to.include(res.status);
+  test("status is 401", function() {
+    expect(res.status).to.equal(401);
   });
 }
