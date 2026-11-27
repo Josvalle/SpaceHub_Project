@@ -1,0 +1,31 @@
+meta {
+  name: Update space as admin
+  type: http
+  seq: 15
+}
+
+patch {
+  url: {{baseUrl}}/api/spaces/{{spaceId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "capacity": 6
+  }
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("capacity changed", function() {
+    expect(res.body.capacity).to.equal(6);
+  });
+}

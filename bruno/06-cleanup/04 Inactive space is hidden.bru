@@ -1,0 +1,17 @@
+meta {
+  name: Inactive space is hidden
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/spaces/{{spaceId}}
+  body: none
+  auth: none
+}
+
+tests {
+  test("status is 404", function() {
+    expect(res.status).to.equal(404);
+  });
+}

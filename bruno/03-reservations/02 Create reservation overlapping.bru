@@ -1,0 +1,29 @@
+meta {
+  name: Create reservation overlapping
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/reservations
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{member2Token}}
+}
+
+body:json {
+  {
+    "spaceId": {{spaceId}},
+    "startTime": "{{overlapStart}}",
+    "endTime": "{{overlapEnd}}"
+  }
+}
+
+tests {
+  test("status is 409", function() {
+    expect(res.status).to.equal(409);
+  });
+}

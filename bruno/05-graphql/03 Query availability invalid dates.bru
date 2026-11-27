@@ -1,0 +1,27 @@
+meta {
+  name: Query availability invalid dates
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/graphql
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "query": "{ spacesAvailability(start: \"nope\", end: \"nope\") { available } }"
+  }
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("returns a graphql error", function() {
+    expect(res.body.errors[0].message).to.be.a("string");
+  });
+}

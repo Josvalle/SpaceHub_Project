@@ -1,0 +1,27 @@
+meta {
+  name: Update plan invalid
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/api/memberships/{{memberId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "plan": "gold"
+  }
+}
+
+tests {
+  test("status is 400", function() {
+    expect(res.status).to.equal(400);
+  });
+}

@@ -1,0 +1,27 @@
+meta {
+  name: Update plan user not found
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{baseUrl}}/api/memberships/999999
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "plan": "pro"
+  }
+}
+
+tests {
+  test("status is 404", function() {
+    expect(res.status).to.equal(404);
+  });
+}

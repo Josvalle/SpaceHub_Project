@@ -1,42 +1,66 @@
-type User {
-  id: ID!
-  name: String!
-  email: String!
-  password: String!
-  role: String!
-}
-
-type Booking {
-  id: ID!
-  startTime: String!
-  endTime: String!
-  status: String!
-  totalPrice: String!
-  createdAt: String!
-  user: User
-}
-
 type Space {
   id: ID!
   name: String!
   type: String!
   capacity: Int!
-  pricePerHour: Int!
+  pricePerHour: Float!
+  location: String!
   isActive: Boolean!
-  createdAt: String!
-  bookings: [Booking!]
 }
 
-type OccupancyAnalytics {
+type SpaceAvailability {
+  space: Space!
+  available: Boolean!
+}
+
+type OccupancyStat {
+  location: String!
+  type: String!
   totalSpaces: Int!
+  bookedHours: Float!
   occupancyRate: Float!
-  totalRevenue: Float!
-  membershipsExpiringSoon: Int!
-  topUsers: [String!]!
+}
+
+type RevenueStat {
+  period: String!
+  total: Float!
+  bookings: Int!
+}
+
+type ExpiringMembership {
+  userId: ID!
+  name: String!
+  email: String!
+  plan: String!
+  endDate: String!
+}
+
+type TopUser {
+  userId: ID!
+  name: String!
+  email: String!
+  bookings: Int!
+}
+
+type Analytics {
+  occupancy: [OccupancyStat!]!
+  revenue: [RevenueStat!]!
+  membershipsExpiring: [ExpiringMembership!]!
+  topUsers: [TopUser!]!
+}
+
+enum GroupBy {
+  day
+  month
 }
 
 type Query {
   spaces(type: String, minCapacity: Int): [Space!]!
   space(id: ID!): Space
-  occupancyAnalytics: OccupancyAnalytics!
+  spacesAvailability(start: String!, end: String!, type: String, minCapacity: Int): [SpaceAvailability!]!
+  analytics(from: String!, to: String!, groupBy: GroupBy = month, expiresInDays: Int = 7, topLimit: Int = 5): Analytics!
+}
+
+type Subscription {
+  spacesAvailability(start: String!, end: String!, type: String, minCapacity: Int): [SpaceAvailability!]!
 }

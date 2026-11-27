@@ -1,0 +1,392 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SpaceHub API",
+    "version": "1.0.0",
+    "description": "API para gestionar sedes, espacios, reservas y membresias de SpaceHub Coworking. Los endpoints protegidos necesitan el header Authorization: Bearer <token>."
+  },
+  "servers": [{ "url": "/", "description": "Servidor actual" }],
+  "tags": [
+    { "name": "Auth" },
+    { "name": "Spaces" },
+    { "name": "Reservations" },
+    { "name": "Memberships" },
+    { "name": "GraphQL" }
+  ],
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Registrar un usuario",
+        "description": "Crea el usuario con rol member y su membresia basic de un anio.",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegisterBody" } } }
+        },
+        "responses": {
+          "201": { "description": "Usuario creado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "409": { "description": "El correo ya esta registrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Iniciar sesion",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginBody" } } }
+        },
+        "responses": {
+          "200": { "description": "Sesion iniciada", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "description": "Credenciales invalidas", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/api/spaces": {
+      "get": {
+        "tags": ["Spaces"],
+        "summary": "Listar espacios activos",
+        "parameters": [
+          { "name": "type", "in": "query", "schema": { "$ref": "#/components/schemas/SpaceType" } },
+          { "name": "minCapacity", "in": "query", "schema": { "type": "integer", "minimum": 1 } },
+          { "name": "date", "in": "query", "description": "Dia a consultar (YYYY-MM-DD). Sin horas, solo se ocultan los espacios ocupados todo el dia", "schema": { "type": "string", "format": "date" } },
+          { "name": "startTime", "in": "query", "description": "Hora de inicio HH:mm (UTC). Requiere date y endTime. Solo se muestran los espacios libres en ese rango", "schema": { "type": "string", "example": "10:00" } },
+          { "name": "endTime", "in": "query", "description": "Hora de fin HH:mm (UTC). Requiere date y startTime", "schema": { "type": "string", "example": "12:00" } }
+        ],
+        "responses": {
+          "200": { "description": "Lista de espacios", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Space" } } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      },
+      "post": {
+        "tags": ["Spaces"],
+        "summary": "Crear un espacio (admin)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SpaceInput" } } }
+        },
+        "responses": {
+          "201": { "description": "Espacio creado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Space" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/spaces/{id}": {
+      "parameters": [{ "$ref": "#/components/parameters/Id" }],
+      "get": {
+        "tags": ["Spaces"],
+        "summary": "Detalle de un espacio activo",
+        "responses": {
+          "200": { "description": "Espacio", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Space" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "patch": {
+        "tags": ["Spaces"],
+        "summary": "Actualizar un espacio (admin)",
+        "description": "Todos los campos son opcionales.",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SpaceUpdate" } } }
+        },
+        "responses": {
+          "200": { "description": "Espacio actualizado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Space" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Spaces"],
+        "summary": "Desactivar un espacio (admin)",
+        "description": "No borra el espacio ni sus reservas, solo lo marca como inactivo.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Espacio desactivado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Space" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/reservations": {
+      "post": {
+        "tags": ["Reservations"],
+        "summary": "Crear una reserva",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BookingInput" } } }
+        },
+        "responses": {
+          "201": { "description": "Reserva creada", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Booking" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "description": "El espacio ya esta reservado en ese horario", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      },
+      "get": {
+        "tags": ["Reservations"],
+        "summary": "Listar reservas",
+        "description": "Un miembro ve solo las suyas, un admin ve todas.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Lista de reservas", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/BookingDetail" } } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/reservations/{id}": {
+      "parameters": [{ "$ref": "#/components/parameters/Id" }],
+      "get": {
+        "tags": ["Reservations"],
+        "summary": "Detalle de una reserva",
+        "description": "Un miembro solo puede ver las suyas, si es de otro responde 404.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Reserva", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BookingDetail" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/reservations/{id}/cancel": {
+      "parameters": [{ "$ref": "#/components/parameters/Id" }],
+      "patch": {
+        "tags": ["Reservations"],
+        "summary": "Cancelar una reserva",
+        "description": "Un miembro solo puede cancelar las suyas, un admin cualquiera.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Reserva cancelada", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Booking" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "description": "La reserva ya estaba cancelada", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/api/memberships": {
+      "get": {
+        "tags": ["Memberships"],
+        "summary": "Listar membresias activas (admin)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Membresias activas", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Membership" } } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/memberships/{userId}": {
+      "patch": {
+        "tags": ["Memberships"],
+        "summary": "Cambiar el plan de un usuario (admin)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "userId", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["plan"], "properties": { "plan": { "$ref": "#/components/schemas/Plan" } } } } }
+        },
+        "responses": {
+          "200": { "description": "Membresia actualizada", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Membership" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/graphql": {
+      "post": {
+        "tags": ["GraphQL"],
+        "summary": "Consultas, analiticas y suscripcion de disponibilidad",
+        "description": "Queries: spaces, space, spacesAvailability y analytics (solo admin, con token). Suscripcion: spacesAvailability, que se actualiza cada vez que se crea o cancela una reserva. Para la suscripcion se envia Accept: text/event-stream. Hay un playground en el navegador en esta misma ruta.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["query"],
+                "properties": {
+                  "query": { "type": "string", "example": "{ spaces { id name type pricePerHour location } }" },
+                  "variables": { "type": "object" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Resultado GraphQL. Los errores vienen en el campo errors", "content": { "application/json": { "schema": { "type": "object" } } } }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    },
+    "parameters": {
+      "Id": { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+    },
+    "responses": {
+      "BadRequest": { "description": "Datos invalidos", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "Unauthorized": { "description": "Falta el token o es invalido", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "Forbidden": { "description": "El rol no tiene permiso", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "NotFound": { "description": "No existe el recurso", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": { "error": { "type": "string" } },
+        "example": { "error": "Mensaje del error" }
+      },
+      "Role": { "type": "string", "enum": ["member", "admin"] },
+      "SpaceType": { "type": "string", "enum": ["desk", "private_room", "suite"] },
+      "BookingStatus": { "type": "string", "enum": ["pending", "confirmed", "canceled"] },
+      "Plan": { "type": "string", "enum": ["basic", "pro", "enterprise"] },
+      "RegisterBody": {
+        "type": "object",
+        "required": ["name", "email", "password"],
+        "properties": {
+          "name": { "type": "string", "example": "Ana Perez" },
+          "email": { "type": "string", "format": "email", "example": "ana@example.com" },
+          "password": { "type": "string", "minLength": 8, "example": "12345678" }
+        }
+      },
+      "LoginBody": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email", "example": "ana@example.com" },
+          "password": { "type": "string", "example": "12345678" }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "role": { "$ref": "#/components/schemas/Role" }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "user": { "$ref": "#/components/schemas/User" },
+          "token": { "type": "string" }
+        }
+      },
+      "Space": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "type": { "$ref": "#/components/schemas/SpaceType" },
+          "capacity": { "type": "integer" },
+          "pricePerHour": { "type": "string", "example": "20" },
+          "location": { "type": "string" },
+          "isActive": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "SpaceInput": {
+        "type": "object",
+        "required": ["name", "type", "capacity", "pricePerHour", "location"],
+        "properties": {
+          "name": { "type": "string", "example": "Sala Norte" },
+          "type": { "$ref": "#/components/schemas/SpaceType" },
+          "capacity": { "type": "integer", "minimum": 1, "example": 4 },
+          "pricePerHour": { "type": "number", "example": 20 },
+          "location": { "type": "string", "example": "San Jose" }
+        }
+      },
+      "SpaceUpdate": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "type": { "$ref": "#/components/schemas/SpaceType" },
+          "capacity": { "type": "integer", "minimum": 1 },
+          "pricePerHour": { "type": "number" },
+          "location": { "type": "string" },
+          "isActive": { "type": "boolean" }
+        }
+      },
+      "BookingInput": {
+        "type": "object",
+        "required": ["spaceId", "startTime", "endTime"],
+        "properties": {
+          "spaceId": { "type": "integer", "example": 1 },
+          "startTime": { "type": "string", "format": "date-time", "example": "2030-01-01T10:00:00Z" },
+          "endTime": { "type": "string", "format": "date-time", "example": "2030-01-01T12:00:00Z" }
+        }
+      },
+      "Booking": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "userId": { "type": "integer" },
+          "spaceId": { "type": "integer" },
+          "startTime": { "type": "string", "format": "date-time" },
+          "endTime": { "type": "string", "format": "date-time" },
+          "status": { "$ref": "#/components/schemas/BookingStatus" },
+          "totalPrice": { "type": "string", "example": "40" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "BookingDetail": {
+        "allOf": [
+          { "$ref": "#/components/schemas/Booking" },
+          {
+            "type": "object",
+            "properties": {
+              "space": { "$ref": "#/components/schemas/Space" },
+              "user": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "integer" },
+                  "name": { "type": "string" },
+                  "email": { "type": "string" }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "Membership": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "userId": { "type": "integer" },
+          "plan": { "$ref": "#/components/schemas/Plan" },
+          "startDate": { "type": "string", "format": "date-time" },
+          "endDate": { "type": "string", "format": "date-time" },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "integer" },
+              "name": { "type": "string" },
+              "email": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

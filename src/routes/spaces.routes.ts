@@ -1,74 +1,15 @@
 import { Router } from 'express'
-import prisma from '../lib/prisma'
-import { authenticate } from '../middleware/auth.middleware'
+import * as controller from '../controllers/spaces.controller'
+import { authenticate, authorize } from '../middleware/auth.middleware'
+import { validateId } from '../middleware/validateId.middleware'
+import { asyncHandler } from '../middleware/error.middleware'
 
 const router = Router()
 
-router.get('/', async (req, res) => {
-  const { type, minCapacity } = req.query
-
-  const filters: any = {}
-
-  if (type) {
-    filters.type = type as string
-  }
-
-  // TODO: filter by minCapacity
-  // TODO: filter by availability on date
-
-  try {
-    const spaces = await prisma.space.findMany({ where: filters })
-    res.json(spaces)
-  } catch (error: any) {
-    res.status(500).json({ error: error.message })
-  }
-})
-
-router.get('/:id', async (req, res) => {
-  const { id } = req.params
-
-  try {
-    const space = await prisma.space.findUnique({
-      where: { id: parseInt(id) }
-    })
-
-    if (!space) {
-      return res.status(404).json({ error: 'Space not found' })
-    }
-
-    res.json(space)
-  } catch (error: any) {
-    res.status(500).json({ error: error.message })
-  }
-})
-
-router.post('/', async (req, res) => {
-  const { name, type, capacity, pricePerHour } = req.body
-
-  try {
-    const space = await prisma.space.create({
-      data: { name, type, capacity, pricePerHour, isActive: true }
-    })
-    res.status(201).json(space)
-  } catch (error: any) {
-    res.status(500).json({ error: error.message })
-  }
-})
-
-router.put('/:id', authenticate, async (req, res) => {
-  // TODO: implement space update
-  res.status(501).json({ message: 'Not implemented' })
-})
-
-router.delete('/:id', authenticate, async (req, res) => {
-  const { id } = req.params
-
-  try {
-    await prisma.space.delete({ where: { id: parseInt(id) } })
-    res.json({ message: 'Space deleted' })
-  } catch (error: any) {
-    res.status(500).json({ error: error.message })
-  }
-})
+router.get('/', asyncHandler(controller.list))
+router.get('/:id', validateId(), asyncHandler(controller.get))
+router.post('/', authenticate, authorize('admin'), asyncHandler(controller.create))
+router.patch('/:id', authenticate, authorize('admin'), validateId(), asyncHandler(controller.update))
+router.delete('/:id', authenticate, authorize('admin'), validateId(), asyncHandler(controller.deactivate))
 
 export default router

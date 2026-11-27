@@ -1,0 +1,21 @@
+meta {
+  name: Get reservation of another member
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/api/reservations/{{bookingId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{member2Token}}
+}
+
+tests {
+  test("status is 404", function() {
+    expect(res.status).to.equal(404);
+  });
+}

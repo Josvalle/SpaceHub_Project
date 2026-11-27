@@ -1,0 +1,27 @@
+meta {
+  name: Analytics without token
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/graphql
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "query": "{ analytics(from: \"2100-01-01T00:00:00Z\", to: \"2110-01-01T00:00:00Z\") { occupancy { location type totalSpaces bookedHours occupancyRate } revenue { period total bookings } membershipsExpiring { name plan } topUsers { name bookings } } }"
+  }
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("request is rejected", function() {
+    expect(res.body.errors[0].message).to.equal("Authentication required");
+  });
+}

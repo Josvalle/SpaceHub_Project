@@ -1,0 +1,21 @@
+meta {
+  name: Cancel reservation not found
+  type: http
+  seq: 16
+}
+
+patch {
+  url: {{baseUrl}}/api/reservations/999999/cancel
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{memberToken}}
+}
+
+tests {
+  test("status is 404", function() {
+    expect(res.status).to.equal(404);
+  });
+}

@@ -1,0 +1,33 @@
+meta {
+  name: Reserve again after cancel
+  type: http
+  seq: 17
+}
+
+post {
+  url: {{baseUrl}}/api/reservations
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{member2Token}}
+}
+
+body:json {
+  {
+    "spaceId": {{spaceId}},
+    "startTime": "{{startTime}}",
+    "endTime": "{{endTime}}"
+  }
+}
+
+vars:post-response {
+  booking2Id: res.body.id
+}
+
+tests {
+  test("status is 201", function() {
+    expect(res.status).to.equal(201);
+  });
+}

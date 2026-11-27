@@ -1,16 +1,12 @@
 import { Router } from 'express'
-import { authenticate } from '../middleware/auth.middleware'
+import * as controller from '../controllers/memberships.controller'
+import { authenticate, authorize } from '../middleware/auth.middleware'
+import { validateId } from '../middleware/validateId.middleware'
+import { asyncHandler } from '../middleware/error.middleware'
 
 const router = Router()
 
-router.get('/', authenticate, async (req, res) => {
-  // TODO: query active memberships
-  res.json([])
-})
-
-router.patch('/:userId', authenticate, async (req, res) => {
-  // TODO: update membership plan
-  res.status(501).json({ message: 'Not implemented' })
-})
+router.get('/', authenticate, authorize('admin'), asyncHandler(controller.list))
+router.patch('/:userId', authenticate, authorize('admin'), validateId('userId'), asyncHandler(controller.updatePlan))
 
 export default router

@@ -1,0 +1,29 @@
+meta {
+  name: Cannot reserve inactive space
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/reservations
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{memberToken}}
+}
+
+body:json {
+  {
+    "spaceId": {{spaceId}},
+    "startTime": "{{startTime}}",
+    "endTime": "{{endTime}}"
+  }
+}
+
+tests {
+  test("status is 404", function() {
+    expect(res.status).to.equal(404);
+  });
+}

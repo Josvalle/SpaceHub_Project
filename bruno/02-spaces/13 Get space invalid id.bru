@@ -1,0 +1,17 @@
+meta {
+  name: Get space invalid id
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{baseUrl}}/api/spaces/abc
+  body: none
+  auth: none
+}
+
+tests {
+  test("status is 400", function() {
+    expect(res.status).to.equal(400);
+  });
+}

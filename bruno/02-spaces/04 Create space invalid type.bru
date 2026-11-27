@@ -1,0 +1,31 @@
+meta {
+  name: Create space invalid type
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/spaces
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "name": "Bruno Room",
+    "type": "garage",
+    "capacity": 4,
+    "pricePerHour": 20,
+    "location": "San Jose"
+  }
+}
+
+tests {
+  test("status is 400", function() {
+    expect(res.status).to.equal(400);
+  });
+}

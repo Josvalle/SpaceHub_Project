@@ -1,0 +1,17 @@
+meta {
+  name: List spaces by date and time range
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/api/spaces?date=2000-01-01&startTime=10:00&endTime=12:00
+  body: none
+  auth: none
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+}

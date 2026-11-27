@@ -1,0 +1,27 @@
+meta {
+  name: Query spaces
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/graphql
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "query": "{ spaces(minCapacity: 1) { id name type pricePerHour location } }"
+  }
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("returns spaces without errors", function() {
+    expect(res.body.errors).to.equal(undefined); expect(res.body.data.spaces).to.be.an("array");
+  });
+}

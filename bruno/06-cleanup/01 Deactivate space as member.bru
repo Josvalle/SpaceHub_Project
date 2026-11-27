@@ -1,0 +1,21 @@
+meta {
+  name: Deactivate space as member
+  type: http
+  seq: 1
+}
+
+delete {
+  url: {{baseUrl}}/api/spaces/{{spaceId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{memberToken}}
+}
+
+tests {
+  test("status is 403", function() {
+    expect(res.status).to.equal(403);
+  });
+}
